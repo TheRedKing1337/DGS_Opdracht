@@ -1,0 +1,4 @@
+interface HeightmapInterface 
+{
+    GetHeightmap() : number[];
+}
