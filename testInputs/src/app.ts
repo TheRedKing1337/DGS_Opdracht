@@ -52,7 +52,7 @@ console.log("Object pool ran succesfully");
 //Snake code below VVV
 
 //Game setting variables
-let tickSpeed = 0.5;
+let tickSpeed = 0.3;
 let cellSize = 32
 let mapWidth = 20; //border is 2 thick voor each side
 let mapHeight = 20; //border is 2 thick voor each side
@@ -64,6 +64,7 @@ enum Directions
     UP, RIGHT, DOWN, LEFT
 }
 let direction = Directions.UP;
+let scoreUI = document.getElementById("score");
 //Snake variables
 class Vector2Int
 {
@@ -89,6 +90,7 @@ document.body.appendChild(app.view);
 //Setup vars
 let snakeHead: PIXI.Sprite, apple : PIXI.Sprite, snakeLast : PIXI.Sprite;
 let snakeBodyTex : PIXI.Texture, snakeCornerTex : PIXI.Texture;
+let snakeBodySprites : PIXI.Sprite[] = [];
 
 //Setup the needed sprites
 app.loader.add('background', backgroundImg)
@@ -187,7 +189,7 @@ function MoveSnake() : void
     //Check for collisions with self
     for(let i=1;i<snakePos.length;i++)
     {
-        if(NearlyEquals(nextPos, snakePos[i]))
+        if(NearlyEqualsVec2(nextPos, snakePos[i]))
         {
             GameOver();
         }
@@ -198,7 +200,7 @@ function MoveSnake() : void
         GameOver();        
     }
     //check for apple
-    if(NearlyEquals(nextPos, applePos))
+    if(NearlyEqualsVec2(nextPos, applePos))
     {
         EatApple();
     }
@@ -211,9 +213,19 @@ function MoveSnake() : void
 }
 function EatApple() : void
 {
+    //make snake longer
+    snakePos.push(new Vector2Int(0,0));
+    //Add new sprite to array
+    snakeBodySprites.push(new PIXI.Sprite(snakeBodyTex));
+    snakeBodySprites[snakeBodySprites.length-1].width = cellSize;
+    snakeBodySprites[snakeBodySprites.length-1].height = cellSize;
+    snakeBodySprites[snakeBodySprites.length-1].anchor.x = 0.5;
+    snakeBodySprites[snakeBodySprites.length-1].anchor.y = 0.5;
+    app.stage.addChild(snakeBodySprites[snakeBodySprites.length-1]);
+
+    //Show score
     console.log("Ate apple!!");
-    //TODO make snake longer
-    snakePos.push
+    scoreUI.innerText = "SCORE : "+(snakePos.length-1);
 
     //move apple
     MoveApple();
@@ -254,19 +266,52 @@ function DrawSnake() : void
         case Directions.LEFT : rot = Math.PI*0.5; break;       
     }
     snakeHead.rotation = rot;
-    //Add new sprite if not enough body sprites    
-    //if(bodySprites.length < snakePos.length) bodySprites.push(new PIXI.Sprite(snakeBodyTex));
-    //Place and rotate last body piece to old head position
+
+    for(let i=1;i<snakePos.length;i++)
+    {
+        snakeBodySprites[i-1].x = GridPosToScreenPos(snakePos[i].x);
+        snakeBodySprites[i-1].y = GridPosToScreenPos(snakePos[i].y);
+        snakeBodySprites[i-1].rotation = GetRotation(snakePos[i],snakePos[i-1]);
+        //if not the last position
+        if(i != snakePos.length-1)
+        {
+            let backRot = GetRotation(snakePos[i+1],snakePos[i]);
+            //if is a corner, if the angle isnt nearly equal to
+            if(!NearlyEquals(backRot,snakeBodySprites[i-1].rotation))
+            {
+                snakeBodySprites[i-1].texture = snakeCornerTex;
+                SetBodyCornerRotation(snakePos[i-1],snakePos[i+1], snakeBodySprites[i-1], snakePos[i]);
+                continue;
+            }
+        }
+        snakeBodySprites[i-1].texture = snakeBodyTex;
+    }
+
+    //TODO Place and rotate last body piece to old head position
     
-    //Place and rotate tail piece
+
     //Calculate the rotation and position of tail piece
     if(snakePos.length > 1) rot = GetRotation(snakePos[snakePos.length-1],snakePos[snakePos.length-2]);
     let xOffset : number = (rot==  Math.PI * 1.5) ? -1 : (rot == Math.PI * 0.5) ? 1 : 0;
     let yOffset : number = (rot == 0) ? -1 : (rot == Math.PI) ? 1 : 0;
 
+    //Place and rotate tail piece
     snakeLast.rotation = rot;
     snakeLast.x = GridPosToScreenPos(snakePos[snakePos.length-1].x + xOffset);
     snakeLast.y = GridPosToScreenPos(snakePos[snakePos.length-1].y + yOffset);
+}
+function SetBodyCornerRotation(frontPos : Vector2Int, backPos : Vector2Int, sprite : PIXI.Sprite, spritePos : Vector2Int)
+{
+    if(frontPos.y > backPos.y)
+    {
+        if(frontPos.x > backPos.x) sprite.rotation = NearlyEquals(spritePos.x,frontPos.x) ? Math.PI*0.5: Math.PI*1.5; 
+        else sprite.rotation = NearlyEquals(spritePos.x,frontPos.x) ? 0: Math.PI; 
+    }
+    else
+    {
+        if(frontPos.x > backPos.x) sprite.rotation = NearlyEquals(spritePos.x,frontPos.x) ? Math.PI: 0; 
+        else sprite.rotation = NearlyEquals(spritePos.x,frontPos.x) ? Math.PI*1.5: Math.PI*0.5; 
+    }
 }
 function GridPosToScreenPos(gridPos:number):number
 {
@@ -276,8 +321,8 @@ function GetRotation(currentPos:Vector2Int , previousPos:Vector2Int) : number
 {
     if(currentPos.x > previousPos.x) return Math.PI*0.5;
     if(currentPos.x < previousPos.x) return Math.PI*1.5;
-    if(currentPos.y > previousPos.y) return 0;
-    return Math.PI;
+    if(currentPos.y > previousPos.y) return Math.PI;
+    return 0;
 }
 function GameOver() : void
 {
@@ -285,7 +330,11 @@ function GameOver() : void
     tickSpeed = 1000000;
 }
 
-function NearlyEquals(posA : Vector2Int, posB : Vector2Int):boolean
+function NearlyEquals(posA : number, posB : number):boolean
+{
+    return Math.abs(posA - posB) < 0.1;
+}
+function NearlyEqualsVec2(posA : Vector2Int, posB : Vector2Int):boolean
 {
     let x = Math.abs(posA.x - posB.x) < 0.1;
     let y = Math.abs(posA.y - posB.y) < 0.1;
