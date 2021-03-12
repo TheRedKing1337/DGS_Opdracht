@@ -4,9 +4,6 @@ import { NoiseFactory} from "./DesignPatterns/Factory/NoiseFactory";
 import { BulletPool } from "./DesignPatterns/ObjectPool/BulletPool";
 import { ApartmentBuilder } from "~DesignPatterns/Builder/Builder";
 
-import * as PIXI from 'pixi.js';
-import { workerData } from "worker_threads";
-import { Console } from "console";
 const backgroundImg = require('./Images/dungeon.png');
 const appleImg = require('./Images/Apple.png');
 const snakeHeadImg = require('./Images/SnakeHead.png');
@@ -50,13 +47,18 @@ console.log("Object pool ran succesfully");
 
 
 //Snake code below VVV
+import * as PIXI from 'pixi.js';
+document.getElementById("restart").addEventListener("click", Restart);
 
 //Game setting variables
-let tickSpeed = 0.3;
+let tickSpeed = 0.2;
 let cellSize = 32
-let mapWidth = 20; //border is 2 thick voor each side
-let mapHeight = 20; //border is 2 thick voor each side
+let mapWidth = 20; 
+let mapHeight = 20; 
 //Game variables
+let borderSize = mapWidth / 10;
+let isAlive : boolean = true;
+let gameOverMessage : PIXI.Text;
 let timeSinceLastTick = 0;
 let bodySprites : PIXI.Sprite[] = [];
 enum Directions
@@ -76,7 +78,7 @@ class Vector2Int
         this.y = y;
     }
 }
-let snakePos : Vector2Int[] = [new Vector2Int(Math.round(Math.random()*(mapWidth-6)+1),Math.round(Math.random()*(mapHeight-6)+1))]; //[new Vector2Int(Math.round(mapWidth/2),Math.round(mapHeight/2))];
+let snakePos : Vector2Int[] = [new Vector2Int(Math.round(mapWidth/2),Math.round(mapHeight/2))]; //= [new Vector2Int(Math.round(Math.random()*(mapWidth-6)+1),Math.round(Math.random()*(mapHeight-6)+1))];
 let applePos : Vector2Int = new Vector2Int(0,0);
 
 
@@ -88,7 +90,7 @@ const app = new PIXI.Application({
 document.body.appendChild(app.view);
 
 //Setup vars
-let snakeHead: PIXI.Sprite, apple : PIXI.Sprite, snakeLast : PIXI.Sprite;
+let snakeHead: PIXI.Sprite, apple : PIXI.Sprite, snakeLast : PIXI.Sprite, background : PIXI.Sprite;
 let snakeBodyTex : PIXI.Texture, snakeCornerTex : PIXI.Texture;
 let snakeBodySprites : PIXI.Sprite[] = [];
 
@@ -101,7 +103,7 @@ app.loader.add('background', backgroundImg)
 .add("snakeLast",snakeLastImg)
 .load((loader, resources) => {
     // This creates a texture from an image
-    const background = new PIXI.Sprite(resources.background.texture);
+    background = new PIXI.Sprite(resources.background.texture);
     
     //Set background size
     background.width = app.renderer.width;
@@ -163,6 +165,7 @@ function KeyDown(event : KeyboardEvent) : void
 function Tick() : void
 {
     //Tick logic
+    if(!isAlive) return;
     timeSinceLastTick += app.ticker.deltaMS*0.001;
     if(timeSinceLastTick < tickSpeed) return;
 
@@ -192,12 +195,14 @@ function MoveSnake() : void
         if(NearlyEqualsVec2(nextPos, snakePos[i]))
         {
             GameOver();
+            return;
         }
     }
     //Check for out of bounds
-    if(nextPos.x < 0 || nextPos.y < 0 || nextPos.x > mapWidth - 4 || nextPos.y > mapHeight -4)
+    if(nextPos.x < 0 || nextPos.y < 0 || nextPos.x > mapWidth - borderSize*2 || nextPos.y > mapHeight -borderSize*2)
     {
-        GameOver();        
+        GameOver();    
+        return;    
     }
     //check for apple
     if(NearlyEqualsVec2(nextPos, applePos))
@@ -233,11 +238,12 @@ function EatApple() : void
 function MoveApple()
 {
     let isOnSnake : boolean = false;
+    //test if the new random position is on the snake body, if so try again
     do 
     {
         //get new random position
-        applePos = new Vector2Int(Math.round(Math.random()*(mapWidth-6)+1),Math.round(Math.random()*(mapHeight-6)+1));
-        //test if the new position is on the snake body, if so try again
+        applePos = new Vector2Int(Math.round(Math.random()*(mapWidth-borderSize*2)),Math.round(Math.random()*(mapHeight-borderSize*2)));
+        //test if is on snake
         for(let i=0;i<snakePos.length;i++)
         {
             if(applePos.x == snakePos[i].x && applePos.y == snakePos[i].y)
@@ -255,8 +261,10 @@ function MoveApple()
 }
 function DrawSnake() : void
 {
+    //position head
     snakeHead.x = GridPosToScreenPos(snakePos[0].x);
     snakeHead.y = GridPosToScreenPos(snakePos[0].y);
+    //get rotation of head
     let rot : number;
     switch(direction)
     {
@@ -267,6 +275,7 @@ function DrawSnake() : void
     }
     snakeHead.rotation = rot;
 
+    //place and rotate body pieces
     for(let i=1;i<snakePos.length;i++)
     {
         snakeBodySprites[i-1].x = GridPosToScreenPos(snakePos[i].x);
@@ -286,10 +295,7 @@ function DrawSnake() : void
         }
         snakeBodySprites[i-1].texture = snakeBodyTex;
     }
-
-    //TODO Place and rotate last body piece to old head position
     
-
     //Calculate the rotation and position of tail piece
     if(snakePos.length > 1) rot = GetRotation(snakePos[snakePos.length-1],snakePos[snakePos.length-2]);
     let xOffset : number = (rot==  Math.PI * 1.5) ? -1 : (rot == Math.PI * 0.5) ? 1 : 0;
@@ -315,7 +321,7 @@ function SetBodyCornerRotation(frontPos : Vector2Int, backPos : Vector2Int, spri
 }
 function GridPosToScreenPos(gridPos:number):number
 {
-    return (gridPos + 2) * cellSize;
+    return (gridPos + borderSize) * cellSize;
 }
 function GetRotation(currentPos:Vector2Int , previousPos:Vector2Int) : number
 {
@@ -326,8 +332,41 @@ function GetRotation(currentPos:Vector2Int , previousPos:Vector2Int) : number
 }
 function GameOver() : void
 {
+    isAlive = false;
+    let style = new PIXI.TextStyle({
+        fontFamily: "Arial",
+        fontSize: 36,
+        fill: "red",
+        stroke: '#ff3300',
+        strokeThickness: 4,
+        dropShadow: true,
+        dropShadowColor: "#000000",
+        dropShadowBlur: 4,
+        dropShadowAngle: Math.PI / 6,
+        dropShadowDistance: 6,
+      });
+    gameOverMessage = new PIXI.Text("GAME OVER!",style);
+    gameOverMessage.position.set(app.renderer.width/2,app.renderer.height/2);
+    gameOverMessage.anchor.x = 0.5;
+    gameOverMessage.anchor.y = 0.5;
+    app.stage.addChild(gameOverMessage);
     console.log("GAME OVER!!");
-    tickSpeed = 1000000;
+}
+function Restart() : void
+{
+    console.log("Restarting");
+    app.stage.removeChild(gameOverMessage);
+    snakePos = [new Vector2Int(Math.round(mapWidth/2),Math.round(mapHeight/2))]; 
+    snakeBodySprites.forEach(sprite => {
+        app.stage.removeChild(sprite);
+    });
+    snakeBodySprites = [];
+    MoveApple();
+    //Resize renderer for if changed
+    app.renderer.resize(cellSize*mapWidth,cellSize*mapHeight);
+    background.width = app.renderer.width;
+    background.height = app.renderer.height;
+    isAlive = true;
 }
 
 function NearlyEquals(posA : number, posB : number):boolean
@@ -339,5 +378,30 @@ function NearlyEqualsVec2(posA : Vector2Int, posB : Vector2Int):boolean
     let x = Math.abs(posA.x - posB.x) < 0.1;
     let y = Math.abs(posA.y - posB.y) < 0.1;
     return (x && y);
+}
+
+//DATABASE stuff
+import * as mysql from "mysql";
+
+function SubmitHighscore(score : number) : boolean
+{
+    let connection = mysql.createConnection({
+        host : "localhost",
+        user : "root",
+        password : "",
+        database : "dgs_opdracht"
+    });
+
+    connection.connect();
+
+    //get current highscores
+    connection.query('SELECT score', function (error, results, fields) {
+        if (error) throw error;
+        console.log('The solution is: ', results[0].solution);
+      });
+    //if too low
+    return false;
+    //if in highscores find correct spot and replace all below
+    return true;
 }
 
