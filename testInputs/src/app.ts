@@ -5,6 +5,8 @@ import { BulletPool } from "./DesignPatterns/ObjectPool/BulletPool";
 import { ApartmentBuilder } from "~DesignPatterns/Builder/Builder";
 import { IDatabaseAdapter, HighscoreData, DatabaseAdapter} from "./DesignPatterns/Adapter/Adapter";
 import { ShapeDrawer, IShape } from "./DesignPatterns/Facade/Facade";
+import { Player, Achievements} from "./DesignPatterns/Observer/Observer";
+import { PlayerInput, Input} from "./DesignPatterns/State/State";
 
 import backgroundImg from "./Images/dungeon.png";
 import appleImg from "./Images/Apple.png";
@@ -63,9 +65,25 @@ let triangle : IShape = shapeDrawer.DrawTriangle(1);
 triangle.Resize(5);
 console.log('Facade ran succesfully');
 
+let achievementSystem : Achievements = new Achievements();
+let player = new Player();
+player.AddObserver(achievementSystem);
+for (let i = 0; i < 10; i++) {
+    player.Die();    
+}
+for (let i = 0; i < 15; i++) {
+    player.KilledEnemy();   
+}
+console.log("Observer ran succesfully");
 
+let playerInput = new PlayerInput();
+playerInput.HandleInput(Input.PRESS_DOWN_ARROW);
+playerInput.HandleInput(Input.RELEASE_DOWN_ARROW);
+playerInput.HandleInput(Input.PRESS_UP_ARROW);
+playerInput.HandleInput(Input.PRESS_DOWN_ARROW);
+console.log("State ran succesfully");
 
-
+//-----------------------------------------------------------------------------------------------------------------------
 //Snake code below VVV
 import * as PIXI from 'pixi.js';
 document.getElementById("restart").addEventListener("click", Restart);
@@ -86,7 +104,6 @@ enum Directions
 }
 let direction = Directions.UP;
 let scoreUI = document.getElementById("score");
-//Snake variables
 class Vector2Int
 {
     x : number;
@@ -167,9 +184,10 @@ app.loader.add('background', backgroundImg)
     app.ticker.add(Tick);
 });
 
+//Add input event
 document.addEventListener("keydown", KeyDown);
 
-
+//The input handler
 function KeyDown(event : KeyboardEvent) : void
 {
     switch(event.key)
@@ -197,6 +215,7 @@ function Tick() : void
     //draw the snake based on new positions
     DrawSnake();
 }
+//Checks for collisions with walls/self/apple and then moves the snake position
 function MoveSnake() : void
 {
     //Get the next position based on input
@@ -235,6 +254,7 @@ function MoveSnake() : void
     }
     snakePos[0] = nextPos;
 }
+//Extends snake and moves apple
 function EatApple() : void
 {
     //make snake longer
@@ -254,6 +274,7 @@ function EatApple() : void
     //move apple
     MoveApple();
 }
+//moves the apple to a random position not taken by snake
 function MoveApple()
 {
     let isOnSnake : boolean = false;
@@ -278,6 +299,7 @@ function MoveApple()
     apple.x = GridPosToScreenPos(applePos.x);
     apple.y = GridPosToScreenPos(applePos.y);
 }
+//draws the snake in the current position
 function DrawSnake() : void
 {
     //position head
@@ -325,6 +347,7 @@ function DrawSnake() : void
     snakeLast.x = GridPosToScreenPos(snakePos[snakePos.length-1].x + xOffset);
     snakeLast.y = GridPosToScreenPos(snakePos[snakePos.length-1].y + yOffset);
 }
+//Sets the rotation of the given corner piece based on the pieces in front and behind said piece
 function SetBodyCornerRotation(frontPos : Vector2Int, backPos : Vector2Int, sprite : PIXI.Sprite, spritePos : Vector2Int)
 {
     if(frontPos.y > backPos.y)
@@ -338,10 +361,12 @@ function SetBodyCornerRotation(frontPos : Vector2Int, backPos : Vector2Int, spri
         else sprite.rotation = NearlyEquals(spritePos.x,frontPos.x) ? Math.PI*1.5: Math.PI*0.5; 
     }
 }
+//Gets the screen position of given grid position
 function GridPosToScreenPos(gridPos:number):number
 {
     return (gridPos + borderSize) * cellSize;
 }
+//Get the sprite rotation based on given position 
 function GetRotation(currentPos:Vector2Int , previousPos:Vector2Int) : number
 {
     if(currentPos.x > previousPos.x) return Math.PI*0.5;
@@ -349,6 +374,7 @@ function GetRotation(currentPos:Vector2Int , previousPos:Vector2Int) : number
     if(currentPos.y > previousPos.y) return Math.PI;
     return 0;
 }
+//Ends the game
 function GameOver() : void
 {
     isAlive = false;
@@ -371,6 +397,7 @@ function GameOver() : void
     app.stage.addChild(gameOverMessage);
     console.log("GAME OVER!!");
 }
+//Restarts the game
 function Restart() : void
 {
     console.log("Restarting");
@@ -388,6 +415,7 @@ function Restart() : void
     isAlive = true;
 }
 
+//Checks if number is nearly equal to other number, to avoid floating point miss that is possible when using ==
 function NearlyEquals(posA : number, posB : number):boolean
 {
     return Math.abs(posA - posB) < 0.1;
@@ -399,7 +427,9 @@ function NearlyEqualsVec2(posA : Vector2Int, posB : Vector2Int):boolean
     return (x && y);
 }
 
+//---------------------------------------------------------------------------------------------------------
 //DATABASE stuff
+//TODO: make it work, cant run on local, when ran on server get this error: Failed to load module script: The server responded with a non-JavaScript MIME type of "". Strict MIME type checking is enforced for module scripts per HTML spec.
 import * as mysql from "mysql";
 
 function SubmitHighscore(score : number) : boolean
