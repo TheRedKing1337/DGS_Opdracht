@@ -3,13 +3,21 @@ import { PerlinNoise } from  "./DesignPatterns/Strategy/PerlinNoise";
 import { NoiseFactory} from "./DesignPatterns/Factory/NoiseFactory";
 import { BulletPool } from "./DesignPatterns/ObjectPool/BulletPool";
 import { ApartmentBuilder } from "~DesignPatterns/Builder/Builder";
+import { IDatabaseAdapter, HighscoreData, DatabaseAdapter} from "./DesignPatterns/Adapter/Adapter";
+import { ShapeDrawer, IShape } from "./DesignPatterns/Facade/Facade";
 
-const backgroundImg = require('./Images/dungeon.png');
-const appleImg = require('./Images/Apple.png');
-const snakeHeadImg = require('./Images/SnakeHead.png');
-const snakeBodyImg = require('./Images/SnakeBody.png');
-const snakeCornerImg = require('./Images/SnakeCorner.png');
-const snakeLastImg = require('./Images/SnakeLast.png');
+import backgroundImg from "./Images/dungeon.png";
+import appleImg from "./Images/Apple.png";
+import snakeHeadImg from "./Images/SnakeHead.png";
+import snakeBodyImg from "./Images/SnakeBody.png";
+import snakeCornerImg from "./Images/SnakeCorner.png";
+import snakeLastImg from "./Images/SnakeLast.png";
+// const backgroundImg = require("./Images/dungeon.png")
+// const appleImg = require('./Images/Apple.png');
+// const snakeHeadImg = require('./Images/SnakeHead.png');
+// const snakeBodyImg = require('./Images/SnakeBody.png');
+// const snakeCornerImg = require('./Images/SnakeCorner.png');
+// const snakeLastImg = require('./Images/SnakeLast.png');
 
 //Creates a new WorldBuilder using Perlin noise
 let wb = new WorldBuilder(new PerlinNoise());
@@ -44,6 +52,18 @@ bullet.OnHit();
 
 console.log("Object pool ran succesfully");
 
+//this code does not work as it requires the database to work
+// let databaseLink : IDatabaseAdapter = new DatabaseAdapter();
+// let highscores : HighscoreData[] = databaseLink.GetHighscores();
+// console.log(highscores);
+//console.log("Adapter ran succesfully");
+
+let shapeDrawer = new ShapeDrawer();
+let triangle : IShape = shapeDrawer.DrawTriangle(1);
+triangle.Resize(5);
+console.log('Facade ran succesfully');
+
+
 
 
 //Snake code below VVV
@@ -60,7 +80,6 @@ let borderSize = mapWidth / 10;
 let isAlive : boolean = true;
 let gameOverMessage : PIXI.Text;
 let timeSinceLastTick = 0;
-let bodySprites : PIXI.Sprite[] = [];
 enum Directions
 {
     UP, RIGHT, DOWN, LEFT
