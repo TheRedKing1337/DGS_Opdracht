@@ -14,6 +14,9 @@ import snakeHeadImg from "./Images/SnakeHead.png";
 import snakeBodyImg from "./Images/SnakeBody.png";
 import snakeCornerImg from "./Images/SnakeCorner.png";
 import snakeLastImg from "./Images/SnakeLast.png";
+import restartImg from "./Images/Restart.png";
+import playImg from "./Images/Play.png";
+import greenImg from "./Images/Green.png";
 // const backgroundImg = require("./Images/dungeon.png")
 // const appleImg = require('./Images/Apple.png');
 // const snakeHeadImg = require('./Images/SnakeHead.png');
@@ -86,7 +89,6 @@ console.log("State ran succesfully");
 //-----------------------------------------------------------------------------------------------------------------------
 //Snake code below VVV
 import * as PIXI from 'pixi.js';
-document.getElementById("restart").addEventListener("click", Restart);
 
 //Game setting variables
 let tickSpeed = 0.2;
@@ -95,15 +97,16 @@ let mapWidth = 20;
 let mapHeight = 20; 
 //Game variables
 let borderSize = mapWidth / 10;
-let isAlive : boolean = true;
+let isAlive : boolean = false;
 let gameOverMessage : PIXI.Text;
+let restartButton : PIXI.Sprite;
+let scoreUI : PIXI.Text;
 let timeSinceLastTick = 0;
 enum Directions
 {
     UP, RIGHT, DOWN, LEFT
 }
 let direction = Directions.UP;
-let scoreUI = document.getElementById("score");
 class Vector2Int
 {
     x : number;
@@ -130,6 +133,7 @@ let snakeHead: PIXI.Sprite, apple : PIXI.Sprite, snakeLast : PIXI.Sprite, backgr
 let snakeBodyTex : PIXI.Texture, snakeCornerTex : PIXI.Texture;
 let snakeBodySprites : PIXI.Sprite[] = [];
 
+
 //Setup the needed sprites
 app.loader.add('background', backgroundImg)
 .add("apple",appleImg)
@@ -144,6 +148,7 @@ app.loader.add('background', backgroundImg)
     //Set background size
     background.width = app.renderer.width;
     background.height = app.renderer.height;
+    background.zIndex = -1;
 
     // Add the background to the scene we are building
     app.stage.addChild(background);
@@ -178,8 +183,62 @@ app.loader.add('background', backgroundImg)
     snakeBodyTex = resources.snakeBody.texture;
     snakeCornerTex = resources.snakeCorner.texture;
 
+    //Init UI
+//Gameover message
+let style = new PIXI.TextStyle({
+    fontFamily: "Arial",
+    fontSize: 36,
+    fill: "red",
+    stroke: '#ff3300',
+    strokeThickness: 4,
+    dropShadow: true,
+    dropShadowColor: "#000000",
+    dropShadowBlur: 4,
+    dropShadowAngle: Math.PI / 6,
+    dropShadowDistance: 6,
+  });
+gameOverMessage = new PIXI.Text("GAME OVER!",style);
+gameOverMessage.position.set(app.renderer.width/2,app.renderer.height/2);
+gameOverMessage.anchor.x = 0.5;
+gameOverMessage.anchor.y = 0.5;
+//Start/Restart button
+restartButton = new PIXI.Sprite.from(playImg);
+restartButton.position.set(app.renderer.width/2,app.renderer.height/2);
+restartButton.anchor.x = 0.5;
+restartButton.anchor.y = 0.5;
+restartButton.interactive = true;
+restartButton.buttonMode = true;
+restartButton.on("pointerdown", Restart);
+//Top banner
+const banner : PIXI.Sprite = new PIXI.Sprite.from(greenImg);
+banner.width = app.renderer.width;
+banner.height = 40;
+//Apple UI
+const appleUI : PIXI.Sprite = new PIXI.Sprite(resources.apple.texture);
+appleUI.width = 40;
+appleUI.height = 40;
+style = new PIXI.TextStyle({
+    fontFamily: "Arial",
+    fontSize: 26,
+    fill: "White",
+    stroke: '#fffff',
+    strokeThickness: 4,
+    dropShadow: true,
+    dropShadowColor: "#000000",
+    dropShadowBlur: 4,
+    dropShadowAngle: Math.PI / 6,
+    dropShadowDistance: 6,
+  });
+scoreUI = new PIXI.Text("0",style);
+scoreUI.position.set(40,0);
+
     DrawSnake();
-    MoveApple();
+
+    //Show UI
+    app.stage.addChild(restartButton);
+    app.stage.addChild(banner);
+    app.stage.addChild(appleUI);
+    app.stage.addChild(scoreUI);
 
     app.ticker.add(Tick);
 });
@@ -269,7 +328,7 @@ function EatApple() : void
 
     //Show score
     console.log("Ate apple!!");
-    scoreUI.innerText = "SCORE : "+(snakePos.length-1);
+    scoreUI.text = (snakePos.length-1).toString();
 
     //move apple
     MoveApple();
@@ -281,6 +340,7 @@ function MoveApple()
     //test if the new random position is on the snake body, if so try again
     do 
     {
+        isOnSnake = false;
         //get new random position
         applePos = new Vector2Int(Math.round(Math.random()*(mapWidth-borderSize*2)),Math.round(Math.random()*(mapHeight-borderSize*2)));
         //test if is on snake
@@ -378,23 +438,11 @@ function GetRotation(currentPos:Vector2Int , previousPos:Vector2Int) : number
 function GameOver() : void
 {
     isAlive = false;
-    let style = new PIXI.TextStyle({
-        fontFamily: "Arial",
-        fontSize: 36,
-        fill: "red",
-        stroke: '#ff3300',
-        strokeThickness: 4,
-        dropShadow: true,
-        dropShadowColor: "#000000",
-        dropShadowBlur: 4,
-        dropShadowAngle: Math.PI / 6,
-        dropShadowDistance: 6,
-      });
-    gameOverMessage = new PIXI.Text("GAME OVER!",style);
-    gameOverMessage.position.set(app.renderer.width/2,app.renderer.height/2);
-    gameOverMessage.anchor.x = 0.5;
-    gameOverMessage.anchor.y = 0.5;
     app.stage.addChild(gameOverMessage);
+    restartButton.texture = PIXI.Texture.from(restartImg);
+
+    restartButton.position.set(app.renderer.width/2,app.renderer.height/2+128);
+    app.stage.addChild(restartButton);
     console.log("GAME OVER!!");
 }
 //Restarts the game
@@ -402,6 +450,7 @@ function Restart() : void
 {
     console.log("Restarting");
     app.stage.removeChild(gameOverMessage);
+    app.stage.removeChild(restartButton);
     snakePos = [new Vector2Int(Math.round(mapWidth/2),Math.round(mapHeight/2))]; 
     snakeBodySprites.forEach(sprite => {
         app.stage.removeChild(sprite);
