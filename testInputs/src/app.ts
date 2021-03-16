@@ -1,12 +1,12 @@
-import { WorldBuilder } from "./DesignPatterns/Strategy/WorldBuilder";
-import { PerlinNoise } from  "./DesignPatterns/Strategy/PerlinNoise";
-import { NoiseFactory} from "./DesignPatterns/Factory/NoiseFactory";
-import { BulletPool } from "./DesignPatterns/ObjectPool/BulletPool";
-import { ApartmentBuilder } from "~DesignPatterns/Builder/Builder";
-import { IDatabaseAdapter, HighscoreData, DatabaseAdapter} from "./DesignPatterns/Adapter/Adapter";
-import { ShapeDrawer, IShape } from "./DesignPatterns/Facade/Facade";
-import { Player, Achievements} from "./DesignPatterns/Observer/Observer";
-import { PlayerInput, Input} from "./DesignPatterns/State/State";
+import { WorldBuilder } from "./DesignPatterns/Strategy/WorldBuilder.ts";
+import { PerlinNoise } from  "./DesignPatterns/Strategy/PerlinNoise.ts";
+import { NoiseFactory} from "./DesignPatterns/Factory/NoiseFactory.ts";
+import { BulletPool } from "./DesignPatterns/ObjectPool/BulletPool.ts";
+import { ApartmentBuilder } from "~DesignPatterns/Builder/Builder.ts";
+import { IDatabaseAdapter, HighscoreData, DatabaseAdapter} from "./DesignPatterns/Adapter/Adapter.ts";
+import { ShapeDrawer, IShape } from "./DesignPatterns/Facade/Facade.ts";
+import { Player, Achievements} from "./DesignPatterns/Observer/Observer.ts";
+import { PlayerInput, Input} from "./DesignPatterns/State/State.ts";
 
 import backgroundImg from "./Images/dungeon.png";
 import appleImg from "./Images/Apple.png";
@@ -61,7 +61,7 @@ console.log("Object pool ran succesfully");
 // let databaseLink : IDatabaseAdapter = new DatabaseAdapter();
 // let highscores : HighscoreData[] = databaseLink.GetHighscores();
 // console.log(highscores);
-//console.log("Adapter ran succesfully");
+// console.log("Adapter ran succesfully");
 
 let shapeDrawer = new ShapeDrawer();
 let triangle : IShape = shapeDrawer.DrawTriangle(1);
@@ -502,4 +502,3 @@ function SubmitHighscore(score : number) : boolean
     //if in highscores find correct spot and replace all below
     return true;
 }
-

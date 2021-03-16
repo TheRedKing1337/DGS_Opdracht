@@ -1,4 +1,6 @@
 import * as mysql from "mysql";
+//In this example I tried to make an adapter to a database, however the database part doesnt work so the code cannot run 
+//TODO : make database work ??
 
 export class HighscoreData
 {
