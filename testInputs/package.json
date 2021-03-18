@@ -7,12 +7,13 @@
     "clean": "rimraf ./dist ./.cache",
     "dev": "parcel ./src/index.html --open",
     "build": "npm run clean && parcel build ./src/index.html --no-source-maps --public-url ./",
-    "start": "node src/server.js"
+    "start": "node ./src/server.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@types/lodash": "^4.14.149",
+    "cors": "^2.8.5",
     "f": "^1.4.0",
     "http": "0.0.1-security",
     "lodash": "^4.17.21",

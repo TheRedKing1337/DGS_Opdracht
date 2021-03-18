@@ -1,13 +1,29 @@
 var mysql = require('mysql');
 
-var con = mysql.createConnection({
-  host: "localhost",
-  user: "yourusername",
-  password: "yourpassword"
+let connection = mysql.createConnection({
+  host : "localhost",
+  user : "root",
+  password : "",
+  database : "dgs_opdracht"
 });
 
-con.connect(function(err) {
+var highscores;
+
+connection.connect(function(err) 
+{
   if (err) throw err;
-  console.log("Connected!");
+
+  connection.query("SELECT * FROM snakehighscores", function (error, results, fields) 
+  {
+      if (error) throw error;
+      highscores = results;
+      for(let i=0;i<results.length;i++)
+      {
+          console.log("ID: "+results[i].id + " Name: " + results[i].name + " Score: "+results[i].score);
+      }
+  });
+
+  connection.end();
 });
 
+console.log(highscores);
