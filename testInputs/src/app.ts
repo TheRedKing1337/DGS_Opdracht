@@ -513,7 +513,6 @@ function GameOver(): void {
     isAlive = false;
     app.stage.addChild(gameOverMessage);
     app.stage.addChild(scoreboardBanner);
-    UpdateHighscoreboard();
     app.stage.addChild(scoreboardNameText);
     app.stage.addChild(scoreboardScoreText);
     restartButton.texture = PIXI.Texture.from(restartImg);
@@ -560,13 +559,12 @@ function NearlyEqualsVec2(posA: Vector2Int, posB: Vector2Int): boolean {
 }
 
 
-function UpdateDB(name: string, score: number): boolean {
+function UpdateDB(name: string, score: number): boolean 
+{
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', 'http://www.testsite.com/dgs_opdracht/sethighscores.php', true); //http://www.testsite.com/dgs_opdracht/sethighscores.php  http://83.87.185.94/sethighscores.php
+    xhr.open('POST', 'http://83.87.185.94/sethighscores.php', true); //http://www.testsite.com/dgs_opdracht/sethighscores.php  http://83.87.185.94/sethighscores.php
     xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     xhr.onload = function () {
-        // do something to response
-        console.log(this.responseText);
         if (this.responseText != "0") {
             UpdateHighscoreboard();
             return true;
@@ -578,7 +576,7 @@ function UpdateDB(name: string, score: number): boolean {
 function UpdateHighscoreboard() : string
 {
     var req = new XMLHttpRequest();
-    req.open('GET', 'http://www.testsite.com/dgs_opdracht//gethighscores.php');  //http://83.87.185.94/gethighscores.php   http://www.testsite.com/dgs_opdracht//gethighscores.php
+    req.open('GET', 'http://83.87.185.94/gethighscores.php');  //http://83.87.185.94/gethighscores.php   http://www.testsite.com/dgs_opdracht//gethighscores.php
     req.onload = function () {
         let raw = req.responseText;
         let array = raw.split("/");
